@@ -36,11 +36,14 @@
 // ══════════════════════════════════════════════════════════════════════════════
 
 import 'dart:async';
+import 'dart:convert';                             // [FIX-POP-1] utf8.encode
 import 'dart:io';                                 // [FIX-E1-BOND] Platform.isAndroid
 
+import 'package:crypto/crypto.dart';               // [FIX-POP-1] sha256
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';           // [FIX-E1-BOND] MethodChannel
 import 'package:flutter_esp_ble_prov/flutter_esp_ble_prov.dart';
+import '../core/ble_secrets.dart';                 // [FIX-POP-1] popMasterKeyHex
 
 // ── Step enum ─────────────────────────────────────────────────────────────────
 enum ProvStep {
@@ -77,9 +80,39 @@ class BleProvisioningService extends ChangeNotifier {
   // ── Constants ──────────────────────────────────────────────────────────────
   // Firmware: "PROV_SmartIoT_" + serial.substring(0, 6)
   static const String kDevicePrefix = 'PROV_SmartIoT';
-  // ⚠️  Must EXACTLY match #define PROV_POP in esp32/SmartIoT_v15/secrets.h
-  // ⚠️  Production-এ এই value পরিবর্তন করুন এবং secrets.h-এ একই value রাখুন
-  static const String kPoP          = 'Sm@rtW@t3r!BD24'; // ✅ Production PoP — matches PROV_POP in secrets.h
+
+  // [FIX-POP-1] Per-device PoP — no longer a single static value for every
+  // device. Computed the exact same way the ESP32 computes its own:
+  //   PoP = hex( SHA256(masterKeyBytes ++ utf8(serial))[0:12] )
+  // popMasterKeyHex comes from lib/core/ble_secrets.dart and MUST match
+  // POP_MASTER_KEY_HEX in esp32/SmartIoT_v15/secrets.h exactly.
+  //
+  // [deviceName] is the full BLE-advertised name, e.g.
+  // "PROV_SmartIoT_SWT-9C64A71AD6B8" — the serial is everything after the
+  // "PROV_SmartIoT_" prefix, matching what the firmware uses as g_chipSerial.
+  static String derivePoP(String deviceName) {
+    final prefix = '${kDevicePrefix}_';
+    final serial = deviceName.startsWith(prefix)
+        ? deviceName.substring(prefix.length)
+        : deviceName; // fallback: use as-is if prefix somehow missing
+
+    final masterKeyBytes = _hexToBytes(popMasterKeyHex);
+    final serialBytes = utf8.encode(serial);
+    final digest = sha256.convert([...masterKeyBytes, ...serialBytes]).bytes;
+
+    return digest
+        .take(12)
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+  }
+
+  static List<int> _hexToBytes(String hex) {
+    final bytes = <int>[];
+    for (var i = 0; i < hex.length; i += 2) {
+      bytes.add(int.parse(hex.substring(i, i + 2), radix: 16));
+    }
+    return bytes;
+  }
 
   // ── [FIX-E1-BOND] Android BLE bond MethodChannel ──────────────────────────
   // MainActivity.kt-এ "clearSmartIoTBonds" method implement করা আছে।
@@ -240,8 +273,11 @@ class BleProvisioningService extends ChangeNotifier {
     _selectedDevice = deviceName;
     _setState(ProvStep.connecting, 'ble_svc_connecting:$deviceName');
 
+    // [FIX-POP-1] Derived once per attempt — unique to this device's serial
+    final pop = derivePoP(deviceName);
+
     try {
-      if (kDebugMode) debugPrint('[BLE] WiFi scan for: $deviceName  PoP: $kPoP');
+      if (kDebugMode) debugPrint('[BLE] WiFi scan for: $deviceName  PoP: $pop');
 
       // [FIX-E1-BOND] Android-এর stale BLE bond remove করো (E1 এর real root cause)
       // এটা না করলে Android পুরানো encrypted channel দিয়ে connect করার চেষ্টা করে
@@ -255,7 +291,7 @@ class BleProvisioningService extends ChangeNotifier {
       // flutter_esp_ble_prov: scanWifiNetworks handles BLE connect + WiFi scan
       // Timeout: 30s — BLE pairing + scan takes up to ~20s
       final networks = await _ble
-          .scanWifiNetworks(deviceName, kPoP)
+          .scanWifiNetworks(deviceName, pop)
           .timeout(_kConnectTimeout, onTimeout: () {
             throw TimeoutException('BLE connect + WiFi scan 30s timeout', _kConnectTimeout);
           });
@@ -290,7 +326,7 @@ class BleProvisioningService extends ChangeNotifier {
         'Connect timeout (30s)!\n\n'
         '• ESP32 কাছে আনুন\n'
         '• ESP32 restart করুন (Power off → on)\n'
-        '• PoP মিলছে কিনা দেখুন: $kPoP\n'
+        '• PoP মিলছে কিনা দেখুন: $pop\n'
         '• Serial Monitor: "[PROV] Starting BLE:" দেখাচ্ছে কিনা চেক করুন'
         '$extraHint',
       );
@@ -340,10 +376,12 @@ class BleProvisioningService extends ChangeNotifier {
       // flutter_esp_ble_prov: provisionWifi returns bool?
       // null means plugin error — treat as failure
       // Timeout: 45s — ESP32 WiFi connect can take up to ~30s
+      // [FIX-POP-1] Re-derive for this device — same algorithm as the
+      // ESP32, so it must match exactly what was used in connectAndScanWifi.
       final result = await _ble
           .provisionWifi(
             _selectedDevice!,
-            kPoP,
+            derivePoP(_selectedDevice!),
             ssid.trim(),
             password,
           )
@@ -513,8 +551,14 @@ class BleProvisioningService extends ChangeNotifier {
           '• তারপর "Try Again" চাপুন';
     }
     if (msg.contains('pop') || msg.contains('proof')) {
-      return 'Security mismatch!\nESP32 firmware এ PoP চেক করুন: $kPoP\n'
-          'secrets.h এ PROV_POP এর সাথে মিলছে কিনা দেখুন।';
+      // [FIX-POP-1] PoP is now derived per device — there's no single fixed
+      // value to show here anymore. The likely cause if this fires is the
+      // master key in lib/core/ble_secrets.dart not matching the firmware's
+      // esp32/SmartIoT_v15/secrets.h POP_MASTER_KEY_HEX.
+      return 'Security mismatch!\nESP32 firmware আর App এর PoP মিলছে না।\n'
+          'lib/core/ble_secrets.dart এর popMasterKeyHex, '
+          'esp32/SmartIoT_v15/secrets.h এর POP_MASTER_KEY_HEX এর সাথে '
+          'EXACTLY এক কিনা চেক করুন।';
     }
     if (context == 'provision') {
       return 'Provisioning failed!\n'

@@ -1,3 +1,15 @@
+## [1.0.4] — 2026-06-21
+
+### 🔒 Security
+- **[FIX-POP-1]** BLE Proof-of-Possession (PoP) was a single static string (`Sm@rtW@t3r!BD24`) shared by every device — extractable from any one shipped APK, after which it would work against any device in the field. Replaced with a per-device derived PoP: `SHA256(masterKey ++ deviceSerial)[0:12]`, computed identically by the ESP32 firmware (`derivePoP()` in `SmartIoT_v15.ino`, using mbedtls) and the Flutter app (`derivePoP()` in `ble_provisioning_service.dart`, using `package:crypto`). The master key lives in `esp32/SmartIoT_v15/secrets.h` (`POP_MASTER_KEY_HEX`) and `lib/core/ble_secrets.dart` (`popMasterKeyHex`) — both gitignored, both must hold the exact same 64-hex-char value. A committed `lib/core/ble_secrets.template.dart` documents the format for anyone setting up a fresh clone. Verified with 4 cross-language test vectors (Python reference vs. simulated firmware/Dart logic) before deployment — see commit for the check.
+- Honest caveat documented in `SECURITY.md`: this raises the bar substantially (requires reverse-engineering a keyed hash instead of grepping a plaintext string) but doesn't eliminate client-side-secret exposure in an absolute sense — a fully closed solution would need per-device physical labels or a server-mediated PoP, neither practical at this project's current scale.
+
+### 📝 Documentation
+- `SECURITY.md` item 4 rewritten to describe the new per-device PoP scheme and how to generate a new master key.
+- Version references synced to 1.0.4+5 across `pubspec.yaml`, `SECURITY.md`.
+
+---
+
 ## [1.0.3] — 2026-06-20
 
 ### ✨ Features

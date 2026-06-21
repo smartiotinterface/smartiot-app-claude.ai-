@@ -582,6 +582,7 @@ void           checkDeepSleep();
 // AES (preserved from v12)
 static bool    hexToBuf(const String& hex, uint8_t* out, size_t maxLen);
 static String  bufToHex(const uint8_t* b, size_t n);
+static String  derivePoP(const char* serial);
 static void    deriveAESKey(uint8_t key[32]);
 static String  aesEncrypt(const String& plain);
 static String  aesDecrypt(const String& hex);
@@ -706,6 +707,46 @@ static String bufToHex(const uint8_t* b, size_t n) {
     String s; s.reserve(n*2);
     for (size_t i = 0; i < n; i++) { char t[3]; snprintf(t, 3, "%02x", b[i]); s += t; }
     return s;
+}
+
+// ============================================================================
+// [FIX-POP-1] Per-device BLE Proof-of-Possession derivation
+//
+// PoP = hex( SHA256( masterKeyBytes ++ utf8(deviceSerial) )[0:12] )
+//
+// masterKeyBytes comes from POP_MASTER_KEY_HEX in secrets.h (same value
+// must exist in Flutter's lib/core/ble_secrets.dart — see comment there).
+// deviceSerial is g_chipSerial (e.g. "SWT-9C64A71AD6B8"), already unique
+// per device via eFuse MAC, and already broadcast in the clear as part of
+// the BLE advertised name — so using it as derivation input doesn't leak
+// anything new, it's already public. What stays secret is the master key,
+// which is never transmitted over BLE or shown anywhere (PoP itself is
+// also intentionally not printed to Serial Monitor — see [SEC-3]).
+//
+// Flutter computes the exact same hash with the same algorithm once it
+// reads the advertised serial, so both sides arrive at the same PoP
+// without the firmware ever having to send it anywhere.
+// ============================================================================
+static String derivePoP(const char* serial) {
+    uint8_t masterKey[32];
+    if (!hexToBuf(POP_MASTER_KEY_HEX, masterKey, 32)) {
+        // Malformed/missing key in secrets.h — fail loudly in Serial rather
+        // than silently provisioning with a predictable fallback.
+        DBGLN("[POP] ERROR: POP_MASTER_KEY_HEX invalid in secrets.h (must be 64 hex chars)");
+        return String(PROV_BLE_PREFIX); // deterministic but clearly-wrong fallback
+    }
+    size_t serialLen = strlen(serial);
+    size_t inputLen  = 32 + serialLen;
+    uint8_t* input = (uint8_t*)malloc(inputLen);
+    if (!input) return String(PROV_BLE_PREFIX);
+    memcpy(input, masterKey, 32);
+    memcpy(input + 32, serial, serialLen);
+
+    uint8_t hash[32];
+    mbedtls_sha256(input, inputLen, hash, 0); // 0 = SHA-256 (not SHA-224)
+    free(input);
+
+    return bufToHex(hash, 12); // 24 hex chars
 }
 
 static void deriveAESKey(uint8_t key[32]) {
@@ -1140,11 +1181,15 @@ void startProvisioning(bool resetSaved) {
     esp_ble_gap_set_security_param(ESP_BLE_SM_IOCAP_MODE,
                                    &ioCap, sizeof(uint8_t));
 
+    // [FIX-POP-1] Per-device PoP — derived once per provisioning attempt
+    // from g_chipSerial, not the old static PROV_POP for every device.
+    String devicePoP = derivePoP(g_chipSerial);
+
     WiFiProv.beginProvision(
         WIFI_PROV_SCHEME_BLE,
         WIFI_PROV_SCHEME_HANDLER_FREE_BLE,
         WIFI_PROV_SECURITY_1,
-        PROV_POP,           // PoP from secrets.h
+        devicePoP.c_str(),  // unique per device — see derivePoP()
         svcName.c_str(),
         NULL,
         uuid
