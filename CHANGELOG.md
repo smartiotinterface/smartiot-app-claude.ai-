@@ -1,3 +1,11 @@
+## [1.0.6] — 2026-06-21
+
+### 🔒 Security (Firmware)
+- **[SEC-FIX-1]** AES-CBC NVS backup: static IV (`0x37×16`) replaced with `esp_random()` per-encrypt random IV. Format now `"v2:"+iv_hex(32 chars)+ciphertext_hex`. Backward-compatible: `aesDecrypt()` detects the `"v2:"` prefix and uses the embedded IV; legacy entries without the prefix still decrypt using the old static IV. Ported from the v1.0.2/v15.0.2 audit pass (different session) — was the one real security gap between that version and this one.
+- **[SEC-FIX-2]** `TEST_WIFI_SSID` and `TEST_WIFI_PASSWORD` in `secrets.h` blanked to `""`. `TEST_WIFI_ENABLED 0` already prevented them from being used, but blanking removes the real credentials from the binary regardless.
+
+---
+
 ## [1.0.5] — 2026-06-21
 
 ### 🔄 Version Reset & Cleanup

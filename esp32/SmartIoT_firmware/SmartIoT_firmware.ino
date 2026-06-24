@@ -23,6 +23,14 @@
  * debugging even though the version label changed.
  *
  * ════════════════════════════════════════════════════════════════════════════
+ * v1.0.0 — SECURITY FIXES (ported from v15.0.2 audit pass)
+ * ════════════════════════════════════════════════════════════════════════════
+ * [SEC-FIX-1] AES-CBC: Static IV (0x37×16) → esp_random() per-encrypt IV
+ *             Format: "v2:"+iv_hex+ciphertext — backward-compatible with legacy NVS
+ *             (old entries without "v2:" prefix still decrypt using static IV)
+ * [SEC-FIX-2] TEST_WIFI_SSID/PASSWORD blank (TEST_WIFI_ENABLED=0 unchanged)
+ *
+ * ════════════════════════════════════════════════════════════════════════════
  * v15.0.1 — BLE PROVISIONING SESSION FIX
  * ════════════════════════════════════════════════════════════════════════════
  * [FIX-PROV-SESSION] WiFiProv.endProvision() called before beginProvision()
@@ -777,39 +785,56 @@ static String aesEncrypt(const String& plain) {
     if (!inB || !outB) { free(inB); free(outB); return ""; }
     memcpy(inB, plain.c_str(), ptLen);
     for (size_t i = ptLen; i < total; i++) inB[i] = (uint8_t)pad;
-    // [SEC-NOTE] Static IV (0x37 × 16) used for AES-CBC. This IV is consistent
-    // across encrypt/decrypt cycles — changing it would corrupt existing NVS data.
-    // Risk: low (NVS is local device storage, not network-transmitted ciphertext).
-    // If upgrading, add a STATE_VERSION bump + NVS clear to migrate.
-    uint8_t iv[16]; memset(iv, 0x37, 16);
+    // [SEC-FIX-1] Random IV via esp_random() — replaces static 0x37×16 IV.
+    // Format: "v2:" + iv_hex(32 chars) + ciphertext_hex
+    // Migration: aesDecrypt detects "v2:" prefix → uses embedded IV,
+    //            legacy hex (no prefix) → falls back to static IV for existing NVS data.
+    uint8_t iv[16];
+    for (int i = 0; i < 4; i++) {
+        uint32_t r = esp_random();
+        memcpy(iv + i * 4, &r, 4);
+    }
     mbedtls_aes_context ctx;
     mbedtls_aes_init(&ctx);
     mbedtls_aes_setkey_enc(&ctx, key, 256);
     mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, total, iv, inB, outB);
     mbedtls_aes_free(&ctx);
-    String r = bufToHex(outB, total);
+    String r = "v2:" + bufToHex(iv, 16) + bufToHex(outB, total);
     free(inB); free(outB);
     return r;
 }
 
 static String aesDecrypt(const String& hex) {
-    if (hex.length() == 0 || hex.length() % 2 != 0) return "";
-    size_t cLen = hex.length() / 2;
-    if (cLen == 0 || cLen % 16 != 0) return "";
+    if (hex.length() == 0) return "";
     uint8_t key[32]; deriveAESKey(key);
+    uint8_t iv[16];
+    String cipherHex;
+    if (hex.startsWith("v2:")) {
+        // [SEC-FIX-1] New format: "v2:" + 32 IV hex chars + ciphertext hex
+        String ivAndCipher = hex.substring(3);
+        if (ivAndCipher.length() < 32 || ivAndCipher.length() % 2 != 0) return "";
+        if (!hexToBuf(ivAndCipher.substring(0, 32), iv, 16)) return "";
+        cipherHex = ivAndCipher.substring(32);
+    } else {
+        // [MIGRATION] Legacy format: static IV — for existing NVS data before this fix
+        if (hex.length() % 2 != 0) return "";
+        memset(iv, 0x37, 16);
+        cipherHex = hex;
+    }
+    size_t cLen = cipherHex.length() / 2;
+    if (cLen == 0 || cLen % 16 != 0) return "";
     uint8_t* cBuf = (uint8_t*)malloc(cLen);
     uint8_t* pBuf = (uint8_t*)malloc(cLen);
     if (!cBuf || !pBuf) { free(cBuf); free(pBuf); return ""; }
-    if (!hexToBuf(hex, cBuf, cLen)) { free(cBuf); free(pBuf); return ""; }
-    uint8_t iv[16]; memset(iv, 0x37, 16);
+    if (!hexToBuf(cipherHex, cBuf, cLen)) { free(cBuf); free(pBuf); return ""; }
     mbedtls_aes_context ctx;
     mbedtls_aes_init(&ctx);
     mbedtls_aes_setkey_dec(&ctx, key, 256);
     mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_DECRYPT, cLen, iv, cBuf, pBuf);
     mbedtls_aes_free(&ctx);
-    uint8_t pad = pBuf[cLen-1];
-    if (pad == 0 || pad > 16) pad = 0;
-    String r = String((char*)pBuf).substring(0, (int)(cLen - pad));
+    uint8_t pad2 = pBuf[cLen-1];
+    if (pad2 == 0 || pad2 > 16) pad2 = 0;
+    String r = String((char*)pBuf).substring(0, (int)(cLen - pad2));
     free(cBuf); free(pBuf);
     return r;
 }
