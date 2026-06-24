@@ -4,7 +4,7 @@
 # ============================================================================
 
 # ── Secrets & Credentials (CRITICAL — কখনো commit করবেন না) ────────────────
-esp32/SmartIoT_v15/secrets.h
+esp32/SmartIoT_firmware/secrets.h
 android/key.properties
 *.jks
 *.keystore

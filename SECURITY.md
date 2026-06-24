@@ -11,7 +11,7 @@
 **Firebase Console → Project Settings → Service Accounts → Database Secrets**
 - পুরনো secret: **REVOKE** করুন
 - নতুন secret generate করুন
-- `esp32/SmartIoT_v15/secrets.h`-এ `FIREBASE_DB_SECRET`-এ paste করুন
+- `esp32/SmartIoT_firmware/secrets.h`-এ `FIREBASE_DB_SECRET`-এ paste করুন
 
 ---
 
@@ -55,7 +55,7 @@ device provision/hijack করার চেষ্টা করা যেত — 
 আলাদা PoP বানায়। App একই algorithm দিয়ে BLE-তে দেখা serial থেকে মিলিয়ে
 PoP বের করে। একটা device-এর PoP জানা থাকলেও অন্য device-এর PoP আলাদা থাকে।
 
-`esp32/SmartIoT_v15/secrets.h`-এর `POP_MASTER_KEY_HEX` এবং
+`esp32/SmartIoT_firmware/secrets.h`-এর `POP_MASTER_KEY_HEX` এবং
 `lib/core/ble_secrets.dart`-এর `popMasterKeyHex` — দুটো **EXACTLY একই**
 64-character hex value রাখতে হবে (দুটোই .gitignore-এ আছে, GitHub-এ যায় না)।
 
@@ -93,7 +93,7 @@ git status --short | grep secrets.h  # কিছু না দেখালে �
 
 ## ৭. Firmware Production Build
 
-`esp32/SmartIoT_v15/SmartIoT_v15.ino`-এ নিশ্চিত করুন:
+`esp32/SmartIoT_firmware/SmartIoT_firmware.ino`-এ নিশ্চিত করুন:
 ```cpp
 #define PRODUCTION_MODE 1  // ← 1 হতে হবে, 0 না
 ```

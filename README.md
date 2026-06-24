@@ -1,9 +1,9 @@
-# SmartIoT v1.0.2 — Smart Water Tank Monitor 🇧🇩
+# SmartIoT v1.0.4 — Smart Water Tank Monitor 🇧🇩
 
 **ESP32 + Firebase + Flutter** দিয়ে তৈরি পানির ট্যাংক monitoring ও control system।
 
-> **App: v1.0.2 (Play Store first release) | Firmware: v15.0.1** | Developer: Sobuj Billah — SMART IoT Interface
-> ℹ️ Internal development history (v3.5 → v8.2.8) `CHANGELOG.md`-এ সংরক্ষিত — কখনো প্রকাশ হয়নি, ১.০.০ থেকে Semantic Versioning শুরু।
+> **App: v1.0.4 | Firmware: v1.0.0** | Developer: Sobuj Billah — SMART IoT Interface
+> ℹ️ Internal development history (v3.5 → v8.2.8, পরে firmware-শুধু v15.0.1 পর্যন্ত) `CHANGELOG.md`-এ সংরক্ষিত — কখনো প্রকাশ হয়নি। App ১.০.০ থেকে আর firmware ১.০.০ থেকে (2026-06-21 রিসেট) — দুটোই এখন Semantic Versioning, স্বাধীনভাবে।
 > 📦 এই ZIP-এ security sanitization apply করা আছে — deploy করার আগে **`SECURITY.md`** পড়ুন এবং নতুন Firebase DB Secret, AES Key ও Keystore তৈরি করুন।
 
 ---
@@ -65,22 +65,17 @@ flutter run
 ```
 (`build_runner`/codegen বাদ দেওয়া হয়েছে v8.2.8 হাউসকিপিং-এ — প্রজেক্টে কোনো `@HiveType`/`.g.dart` কোডজেন নেই, তাই এটা আগে থেকেই কার্যত no-op ছিল।)
 
-## ESP32 Firmware v15.0.1
+## ESP32 Firmware v1.0.0
 
-**⚠️ দুটো ফোল্ডার আছে — কনফিউশন এড়াতে পড়ো:**
+**Folder:** `esp32/SmartIoT_firmware/SmartIoT_firmware.ino` — একটাই ফোল্ডার আছে, কোনো duplicate/upgrade ফোল্ডার নেই।
 
-| ফোল্ডার | অবস্থা |
-|---|---|
-| `esp32/SmartIoT_v15/SmartIoT_v15.ino` | ✅ **এটা ব্যবহার করো।** WiFi reason-201 (NO_AP_FOUND) ফিক্স ও 2.4GHz-only protocol force ফিক্স — দুটোই আছে। |
-| `esp32/SmartIoT_v15 upgrade/SmartIoT_v15.ino` | ⚠️ একই ভার্সন নাম্বার (v15.0.1) কিন্তু উপরের দুটো WiFi ফিক্স **নেই**। সম্ভবত আগের কোনো snapshot। |
-
-**Secrets:** `esp32/SmartIoT_v15/secrets.h` (⚠️ gitignored — কখনো commit করবেন না)
+**Secrets:** `esp32/SmartIoT_firmware/secrets.h` (⚠️ gitignored — কখনো commit করবেন না)
 
 ### secrets.h এ যা পূরণ করতে হবে:
 ```c
 #define FIREBASE_HOST       "smartiot-8190a-default-rtdb.firebaseio.com"
 #define FIREBASE_DB_SECRET  "your-firebase-database-secret"
-#define PROV_POP            "Sm@rtW@t3r!BD24"  // Flutter-এর kPoP এর সাথে মিলতে হবে
+#define POP_MASTER_KEY_HEX  "64-character-hex-string"  // Flutter-এর lib/core/ble_secrets.dart এর popMasterKeyHex এর সাথে EXACTLY মিলতে হবে
 #define TEST_WIFI_ENABLED   0   // ⚠️ Production-এ অবশ্যই 0 — 1 মানে BLE bypass
 ```
 
@@ -88,7 +83,7 @@ flutter run
 - **Board:** ESP32 Dev Module
 - **Partition Scheme:** No OTA (2MB APP/2MB SPIFFS) ⚠️ গুরুত্বপূর্ণ
 
-### v15.0.1 মূল ফিচার:
+### v1.0.0 মূল ফিচার:
 - ✅ BLE provisioning cooldown (15s→30s→60s retry escalation) + 3-min inactivity auto-restart
 - ✅ OTA: SHA-256 mandatory + Firebase Storage URL whitelist + TLS root-CA pinning
 - ✅ Watchdog fed in WiFi/Prov callbacks, OTA loop, deep-sleep path

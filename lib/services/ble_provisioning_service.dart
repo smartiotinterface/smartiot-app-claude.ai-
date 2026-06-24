@@ -85,7 +85,7 @@ class BleProvisioningService extends ChangeNotifier {
   // device. Computed the exact same way the ESP32 computes its own:
   //   PoP = hex( SHA256(masterKeyBytes ++ utf8(serial))[0:12] )
   // popMasterKeyHex comes from lib/core/ble_secrets.dart and MUST match
-  // POP_MASTER_KEY_HEX in esp32/SmartIoT_v15/secrets.h exactly.
+  // POP_MASTER_KEY_HEX in esp32/SmartIoT_firmware/secrets.h exactly.
   //
   // [deviceName] is the full BLE-advertised name, e.g.
   // "PROV_SmartIoT_SWT-9C64A71AD6B8" — the serial is everything after the
@@ -554,10 +554,10 @@ class BleProvisioningService extends ChangeNotifier {
       // [FIX-POP-1] PoP is now derived per device — there's no single fixed
       // value to show here anymore. The likely cause if this fires is the
       // master key in lib/core/ble_secrets.dart not matching the firmware's
-      // esp32/SmartIoT_v15/secrets.h POP_MASTER_KEY_HEX.
+      // esp32/SmartIoT_firmware/secrets.h POP_MASTER_KEY_HEX.
       return 'Security mismatch!\nESP32 firmware আর App এর PoP মিলছে না।\n'
           'lib/core/ble_secrets.dart এর popMasterKeyHex, '
-          'esp32/SmartIoT_v15/secrets.h এর POP_MASTER_KEY_HEX এর সাথে '
+          'esp32/SmartIoT_firmware/secrets.h এর POP_MASTER_KEY_HEX এর সাথে '
           'EXACTLY এক কিনা চেক করুন।';
     }
     if (context == 'provision') {

@@ -1,6 +1,6 @@
 name: smart_iot_interface
 description: "Smart IoT Interface — SmartWater Level Control BD v1.0.2 — BLE Provisioning, Firebase RTDB, Bilingual EN/BN, Auto Country Code"
-version: 1.0.4+5
+version: 1.0.5+6
 publish_to: 'none'
 
 environment:

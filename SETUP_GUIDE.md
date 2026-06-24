@@ -1,4 +1,4 @@
-# 🔧 SmartIoT সেটআপ গাইড — App v1.0.3 / Firmware v15.0.1
+# 🔧 SmartIoT সেটআপ গাইড — App v1.0.4 / Firmware v1.0.0
 
 ## 💰 সম্পূর্ণ ফ্রি কিনা?
 
@@ -82,7 +82,7 @@ firebase deploy --only database
 ## ধাপ ৪: ESP32 Firmware সেটআপ (CRITICAL FIX)
 
 ```bash
-cd esp32/SmartIoT_v15/
+cd esp32/SmartIoT_firmware/
 ```
 
 `secrets.h` edit করুন — **দুটো জায়গা** fill করুন:
@@ -137,7 +137,7 @@ npm install
 |-----|--------|
 | `lib/firebase_options.dart` — placeholder (আপনার data নেই) | ✅ |
 | `android/app/google-services.json` — placeholder | ✅ |
-| `esp32/SmartIoT_v15/secrets.h` — .gitignore এ | ✅ |
+| `esp32/SmartIoT_firmware/secrets.h` — .gitignore এ | ✅ |
 | WiFi password ESP32-এ AES-256 encrypted | ✅ |
 | Firebase Rules production-ready | ✅ |
 | OTA URL whitelist active | ✅ |
@@ -160,7 +160,7 @@ npm install
 
 উপরের সব ধাপ শেষ করার পর, ফোন/BLE ছাড়াই শুধু Serial Monitor দিয়ে ESP32 ঠিকমতো কাজ করছে কিনা যাচাই করতে নিতে পারো:
 
-1. `esp32/SmartIoT_v15/secrets.h`-এ `FIREBASE_DB_SECRET` দাও, `TEST_WIFI_ENABLED 1` রাখো (test WiFi credential দিয়ে hardcode করে BLE বাইপাস করে)
+1. `esp32/SmartIoT_firmware/secrets.h`-এ `FIREBASE_DB_SECRET` দাও, `TEST_WIFI_ENABLED 1` রাখো (test WiFi credential দিয়ে hardcode করে BLE বাইপাস করে)
 2. Arduino IDE → Upload → Serial Monitor (115200 baud) খুলো
 3. দেখা উচিত: `[TEST] ✅ WiFi OK — IP: 192.168.x.x`
 4. Firebase Console → Realtime Database → `/devices/` এ data আসছে কিনা দেখো

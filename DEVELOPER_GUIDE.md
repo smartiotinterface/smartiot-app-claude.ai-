@@ -1,6 +1,6 @@
 # 📖 DEVELOPER GUIDE — Smart Water Level Control BD
 ### Smart IoT Interface | Developer: Sobuj Billah
-### App: v1.0.2 | Firmware: v15.0.1 | smartiotinterface@gmail.com
+### App: v1.0.4 | Firmware: v1.0.0 | smartiotinterface@gmail.com
 
 ---
 
@@ -154,7 +154,7 @@ PSRAM           : Disabled
 ```
 
 ### secrets.h কনফিগার করা
-`esp32/SmartIoT_v15/secrets.h` ফাইলটি খুলুন এবং আপনার মান দিন:
+`esp32/SmartIoT_firmware/secrets.h` ফাইলটি খুলুন এবং আপনার মান দিন:
 
 ```cpp
 #define FIREBASE_HOST       "YOUR_PROJECT-default-rtdb.firebaseio.com"
@@ -166,7 +166,7 @@ PSRAM           : Disabled
 ### আপলোড করার ধাপ
 1. ESP32 USB দিয়ে কম্পিউটারে সংযুক্ত করুন
 2. Arduino IDE-তে সঠিক COM port বেছে নিন
-3. `esp32/SmartIoT_v15/SmartIoT_v15.ino` খুলুন (⚠️ "SmartIoT_v15 upgrade" ফোল্ডারটি না — README.md দেখুন কেন)
+3. `esp32/SmartIoT_firmware/SmartIoT_firmware.ino` খুলুন (⚠️ "SmartIoT_firmware ← মূল ESP32 firmware (v1.0.0)
 4. **Verify** (✓) বাটনে ক্লিক করে compile করুন
 5. কোনো error না থাকলে **Upload** (→) বাটনে ক্লিক করুন
 6. Serial Monitor খুলুন (115200 baud) → boot message দেখুন
@@ -312,8 +312,8 @@ Firebase Console → Realtime Database → নিচের path-এ data সে�
 ```
 SmartIoT_AUDITED/
 ├── esp32/
-│   └── SmartIoT_v15/
-│       ├── SmartIoT_v15.ino    ← মূল ESP32 firmware (v15.0.1)
+│   └── SmartIoT_firmware/
+│       ├── SmartIoT_firmware.ino   ← মূল ESP32 firmware (v1.0.0)
 │       └── secrets.h           ← Firebase credentials (git-এ রাখবেন না!)
 │
 ├── lib/

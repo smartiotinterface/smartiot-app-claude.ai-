@@ -16,7 +16,7 @@
 - **সমাধান:** `.gitignore`-এ যোগ করা হয়েছে
 
 ### [C-3] `secrets.h` .gitignore-এ ছিল ✅ VERIFIED
-- **স্ট্যাটাস:** `esp32/SmartIoT_v15/secrets.h` সঠিকভাবে git-ignored
+- **স্ট্যাটাস:** `esp32/SmartIoT_firmware/secrets.h` সঠিকভাবে git-ignored
 
 ### [C-4] Localization delegates missing from MaterialApp ✅ FIXED
 - **সমস্যা:** `intl` package use হচ্ছিল কিন্তু `GlobalMaterialLocalizations.delegate` etc. ছিল না
@@ -85,7 +85,7 @@
 
 - [ ] `flutterfire configure --project=YOUR_PROJECT_ID` → `lib/firebase_options.dart` generate করুন
 - [ ] Firebase Console → Android App → `google-services.json` download → `android/app/` তে রাখুন
-- [ ] `esp32/SmartIoT_v15/secrets.h` এ আপনার `FIREBASE_HOST` এবং `FIREBASE_DB_SECRET` দিন
+- [ ] `esp32/SmartIoT_firmware/secrets.h` এ আপনার `FIREBASE_HOST` এবং `FIREBASE_DB_SECRET` দিন
 - [ ] Firebase Console → Realtime Database → Rules → `firebase/database.rules.json` deploy করুন
 - [ ] Firebase Console → Authentication → Email/Password enable করুন
 - [ ] Firebase Cloud Messaging → Server key সেট করুন (FCM notifications এর জন্য)
@@ -132,7 +132,7 @@
 | GPIO comment wrong (said GPIO2, is GPIO16) | ✅ Fixed v15 |
 | Test suite: 71/71 (100%) PASS | ✅ Verified |
 
-**Folder:** `esp32/SmartIoT_v15/SmartIoT_v15.ino`
+**Folder:** `esp32/SmartIoT_firmware/SmartIoT_firmware.ino`
 
 ---
 
@@ -162,6 +162,6 @@
 |--------|--------|
 | "Permission denied" error | Firebase Database Rules deploy করুন |
 | FCM notification আসছে না | Blaze plan activate করুন + Functions deploy করুন (বা local notification-এই থাকুন — Spark plan যথেষ্ট) |
-| BLE device খুঁজে পাচ্ছে না | Location permission দিন (Android 12-এর নিচে); `esp32/SmartIoT_v15/` (upgrade ফোল্ডার না) ফ্ল্যাশ করা আছে কিনা যাচাই করুন |
+| BLE device খুঁজে পাচ্ছে না | Location permission দিন (Android 12-এর নিচে); `esp32/SmartIoT_firmware/` (upgrade ফোল্ডার না) ফ্ল্যাশ করা আছে কিনা যাচাই করুন |
 | iOS build fail | GoogleService-Info.plist ঠিক আছে কিনা দেখুন |
 | ESP32 Firebase connect হচ্ছে না | secrets.h-এর FIREBASE_HOST ও DB_SECRET চেক করুন |

@@ -1,10 +1,13 @@
 // lib/core/constants.dart
 // ══════════════════════════════════════════════════════════════════════════════
-//  SmartIoT v1.0.2 — Firmware v15.0.1
+//  SmartIoT v1.0.4 — Firmware v1.0.0
 //  ✅ BLE timeouts (15s scan / 30s connect / 60s provision)
 //  ✅ Null-safety (bool? / Map<dynamic,dynamic> cast)
 //  ✅ Android release keystore (smartiot-release.jks)
-//  ✅ Release SHA-1: FB:0F:56:B8:E6:8E:10:E6:E9:1E:92:7D:21:1B:0C:C7:C5:04:2B:8C
+//  ⚠️  Release SHA-1: regenerated 2026-06-21 — get the current value from
+//      android/key.properties' keystore (keytool -list -v), NOT from a
+//      hardcoded copy here. A stale SHA-1 in a comment is exactly the kind
+//      of thing that quietly breaks Google Sign-In after a keystore rotation.
 //  ✅ Bilingual EN/BN (361+ keys each)
 //  ✅ All hardcoded strings removed — use l10n
 // ══════════════════════════════════════════════════════════════════════════════
@@ -16,7 +19,7 @@ class AppConstants {
   static const String appName         = 'SMART WATER LEVEL CONTROL BD';
   static const String brandName       = 'Smart IoT Interface';
   // Version: always read from PackageInfo.fromPlatform() at runtime
-  static const String firmwareVersion = 'v15.0.1';
+  static const String firmwareVersion = 'v1.0.0';
   static const String developerName   = 'Sobuj Billah';
   static const String companyName     = 'Smart IoT Interface';
 

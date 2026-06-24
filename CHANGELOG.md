@@ -1,7 +1,18 @@
+## [1.0.5] — 2026-06-21
+
+### 🔄 Version Reset & Cleanup
+- **[FW-RESET]** ESP32 firmware version reset from `v15.0.1` → `v1.0.0`. The "v15" counter was an internal iteration number that carried no semantic meaning to users or integrators. No logic changed — every fix from the previous iterations is still present in the code. Both App and Firmware now use `1.x.x` Semantic Versioning independently.
+- **[FW-RENAME]** Firmware folder renamed: `esp32/SmartIoT_v15/` → `esp32/SmartIoT_firmware/`. Firmware file renamed: `SmartIoT_v15.ino` → `SmartIoT_firmware.ino`. Removes the version number from the path so future version bumps don't require renaming folders and updating every path reference across the codebase.
+- **[SHA1-FIX]** Stale SHA-1 fingerprint (`FB:0F:56:...`) removed from `lib/firebase_options.dart` header and `lib/core/constants.dart` — the old keystore was regenerated on 2026-06-21, making the previously hardcoded value wrong. Updated to the new fingerprint (`43:A5:AF:5A:...`). Warning added in the comment not to hardcode SHA-1 there again since it silently becomes wrong after any keystore rotation.
+- **[GITIGNORE-FIX]** `.gitignore` path for `secrets.h` updated from `esp32/SmartIoT_v15/secrets.h` → `esp32/SmartIoT_firmware/secrets.h` to match the renamed folder. **Critical fix** — if this had been missed, the real `secrets.h` (containing Firebase DB secret and AES key) could have been accidentally committed to GitHub on the next push.
+- **[STALE-DOC]** All documentation (README, DEVELOPER_GUIDE, SETUP_GUIDE, PRODUCTION_CHECKLIST, SECURITY, CHANGELOG, build_release.ps1) updated to reflect new folder/file names and version numbers. Removed the now-obsolete warning about the duplicate `SmartIoT_v15 upgrade/` folder (that folder was already removed in a previous session).
+
+---
+
 ## [1.0.4] — 2026-06-21
 
 ### 🔒 Security
-- **[FIX-POP-1]** BLE Proof-of-Possession (PoP) was a single static string (`Sm@rtW@t3r!BD24`) shared by every device — extractable from any one shipped APK, after which it would work against any device in the field. Replaced with a per-device derived PoP: `SHA256(masterKey ++ deviceSerial)[0:12]`, computed identically by the ESP32 firmware (`derivePoP()` in `SmartIoT_v15.ino`, using mbedtls) and the Flutter app (`derivePoP()` in `ble_provisioning_service.dart`, using `package:crypto`). The master key lives in `esp32/SmartIoT_v15/secrets.h` (`POP_MASTER_KEY_HEX`) and `lib/core/ble_secrets.dart` (`popMasterKeyHex`) — both gitignored, both must hold the exact same 64-hex-char value. A committed `lib/core/ble_secrets.template.dart` documents the format for anyone setting up a fresh clone. Verified with 4 cross-language test vectors (Python reference vs. simulated firmware/Dart logic) before deployment — see commit for the check.
+- **[FIX-POP-1]** BLE Proof-of-Possession (PoP) was a single static string (`Sm@rtW@t3r!BD24`) shared by every device — extractable from any one shipped APK, after which it would work against any device in the field. Replaced with a per-device derived PoP: `SHA256(masterKey ++ deviceSerial)[0:12]`, computed identically by the ESP32 firmware (`derivePoP()` in `SmartIoT_firmware.ino`, using mbedtls) and the Flutter app (`derivePoP()` in `ble_provisioning_service.dart`, using `package:crypto`). The master key lives in `esp32/SmartIoT_firmware/secrets.h` (`POP_MASTER_KEY_HEX`) and `lib/core/ble_secrets.dart` (`popMasterKeyHex`) — both gitignored, both must hold the exact same 64-hex-char value. A committed `lib/core/ble_secrets.template.dart` documents the format for anyone setting up a fresh clone. Verified with 4 cross-language test vectors (Python reference vs. simulated firmware/Dart logic) before deployment — see commit for the check.
 - Honest caveat documented in `SECURITY.md`: this raises the bar substantially (requires reverse-engineering a keyed hash instead of grepping a plaintext string) but doesn't eliminate client-side-secret exposure in an absolute sense — a fully closed solution would need per-device physical labels or a server-mediated PoP, neither practical at this project's current scale.
 
 ### 📝 Documentation
@@ -17,7 +28,7 @@
 - **[E164-PREVIEW]** Phone input now shows a live preview of the full E.164 number that will be sent, so users can confirm before tapping "Send OTP".
 
 ### 🐛 Bug Fixes
-- **[FIX-MUTE-1]** `SmartIoT_v15.ino` — `mute_cmd` handler used a truthy check (`doc["mute_cmd"] | false`) that silently dropped `mute_cmd:false`, making mute a one-way switch (device could be muted remotely but never unmuted). Changed to an explicit `isNull()` presence check so both `true` and `false` apply correctly.
+- **[FIX-MUTE-1]** `SmartIoT_firmware.ino` — `mute_cmd` handler used a truthy check (`doc["mute_cmd"] | false`) that silently dropped `mute_cmd:false`, making mute a one-way switch (device could be muted remotely but never unmuted). Changed to an explicit `isNull()` presence check so both `true` and `false` apply correctly.
 
 ### 📝 Documentation
 - **[DOC-FIX]** `SETUP_GUIDE.md` — "Google Fonts | ফ্রি" row was stale (the `google_fonts` package was removed in the v1.0.2 refactor in favour of a bundled local Space Grotesk font). Replaced with an accurate row reflecting the bundled-font, zero-network-dependency setup.
@@ -36,7 +47,7 @@ Performed a systematic, scripted pass across the whole project rather than ad-ho
 - Verified `smartiot-8190a` Firebase project ID is consistent across `firebase.json`, `firebase_options.dart`, and `google-services.json`.
 - Verified field names written from `firebase_service.dart`/`device_service.dart` (`pump_cmd`, `mode_cmd`, `cmd_ts`, `dry_run_reset`) match `firebase/database.rules.json` validation rules exactly, and that `cmd_ts` is written in seconds (matching the rule's `now/1000` comparison).
 - Cross-checked the same control-command field names against the ESP32 firmware's `pollCommands()` parser — this is where `[FIX-MUTE-1]` above was found.
-- Scanned `SmartIoT_v15.ino` for unsafe string functions (`sprintf`/`strcpy`/`strcat` without bounds) — none found, all buffer writes use `snprintf` with explicit sizes.
+- Scanned `SmartIoT_firmware.ino` for unsafe string functions (`sprintf`/`strcpy`/`strcat` without bounds) — none found, all buffer writes use `snprintf` with explicit sizes.
 - Verified `isTimeout()` uses unsigned-wraparound-safe `millis()` arithmetic (correct).
 - Verified `genSerial()`'s `snprintf` output cannot exceed its 24-byte buffer.
 
@@ -56,7 +67,7 @@ Performed a systematic, scripted pass across the whole project rather than ad-ho
 - **[FIX-BLE-1]** `ble_provisioning_service.dart` — Removed misleading `// TODO: Change before release` comment from `kPoP`. The value `Sm@rtW@t3r!BD24` IS the production PoP, matching `secrets.h`.
 
 ### 🔵 SECURITY / DOCUMENTATION
-- **[SEC-NOTE]** `SmartIoT_v15.ino` — Documented static AES-CBC IV (`0x37 × 16`) in NVS backup. Risk: low (local device storage); changing IV requires STATE_VERSION bump + NVS clear.
+- **[SEC-NOTE]** `SmartIoT_firmware.ino` — Documented static AES-CBC IV (`0x37 × 16`) in NVS backup. Risk: low (local device storage); changing IV requires STATE_VERSION bump + NVS clear.
 - **[L10N]** Added `country_code_auto_label` and `phone_e164_hint` keys to EN + BN ARB files and Dart classes.
 - **Version bump:** 1.0.0+1 → 1.0.2+3
 
@@ -71,7 +82,7 @@ Performed a systematic, scripted pass across the whole project rather than ad-ho
 - `lib/core/firebase_error_handler.dart` — সম্পূর্ণ অব্যবহৃত ছিল (zero import, কোথাও call হয় না)
 - `assets/i18n/en.json` ও `bn.json` — legacy JSON-ভিত্তিক localization-এর অবশিষ্ট, বর্তমান ARB-ভিত্তিক সিস্টেম এগুলো পড়েই না; সাথে `pubspec.yaml`-এর dangling `assets/i18n/` entry-ও সরানো হয়েছে
 - `firebase/database.rules.SIMPLE_START.json` — একটা পুরোনো "সব authenticated user-এর জন্য সব read/write" টেমপ্লেট, কোথাও reference হয় না, ভুলে deploy হলে real rules-এর উপর security regression হতো
-- `esp32/SmartIoT_v15 upgrade/` ফোল্ডার — আগেই সুপারিশ করা হয়েছিল মুছে ফেলার, ব্যবহারকারী করেছেন ✅
+- `esp32/SmartIoT_firmware/ (previously duplicate upgrade folder, now removed)` ফোল্ডার — আগেই সুপারিশ করা হয়েছিল মুছে ফেলার, ব্যবহারকারী করেছেন ✅
 
 এই তিনটা dead-file ফিক্স এখন এই (v1.0.0) ভার্সনেও যুক্ত করা হলো। CLEAN-এ অনুপস্থিত ছিল: theme consolidation, নতুন test ফাইল দুটো, `.gitignore`, এবং `assets/images/icon_set/`-এর Play Store marketing asset (icon/feature graphic) দুটো — এগুলো CLEAN বানানোর *আগে* বা *সময়* missing হয়ে গেছে বলে মনে হচ্ছে, ইচ্ছাকৃত cleanup না (এই দুটো ফাইল ছাড়া Play Store submission করা যাবে না, ফেরত আনতে হবে)।
 - প্রথমে অনুমান করা হয়েছিল ১৪টা স্ক্রিনে theme ছড়িয়ে আছে — exhaustive code scan করে দেখা গেছে আসলে তা নয়। মাত্র `ble_provisioning_screen.dart`-এর নিজস্ব `_Brand` palette (ইচ্ছাকৃত "Premium Corporate" নীল থিম, ফাইল হেডারে স্পষ্ট লেখা) আলাদা — এটা bug না, deliberate design, তাই **ছোঁয়া হয়নি**।
@@ -89,8 +100,8 @@ Performed a systematic, scripted pass across the whole project rather than ad-ho
   - `lib/screens/privacy_policy_screen.dart` (২ জায়গা) ও `lib/screens/user_guide_screen.dart` — in-app স্ক্রিনে hardcoded "Version: 8.2.4" দেখাচ্ছিল, ব্যবহারকারী সরাসরি দেখতে পারতো। `1.0.0`-এ ঠিক করা হয়েছে। ⚠️ এগুলো এখনও hardcoded string (about_screen.dart-এর মতো PackageInfo দিয়ে dynamic না) — পরের ভার্সন bump-এও এই একই কাজ আবার ম্যানুয়ালি করতে হবে, যদি না future-এ dynamic-এ রিফ্যাক্টর করা হয়।
   - `privacy_policy.html` (hosted, Play Store-এ link হবে) — একই "Version: 8.2.4" সমস্যা, ফিক্স করা হয়েছে। "Last Updated" তারিখ পরিবর্তন করা হয়নি, কারণ policy-র মূল কনটেন্ট রিভিউ/পরিবর্তন করা হয়নি — শুধু তারিখ বদলালে legal document-এ misleading হতো।
   - `lib/main.dart`, `lib/core/constants.dart`, `lib/services/ble_provisioning_service.dart`, `lib/screens/{about,user_guide,privacy_policy,ble_provisioning}_screen.dart`, `integration_test/app_test.dart`, `build_release.sh`, `analysis_options.yaml`, `test/widget_test.dart`, `SECURITY.md` — file-header comment-এ পুরনো version stamp ছিল, সব সিঙ্ক করা হয়েছে (cosmetic, compile-impact নেই)।
-  - **ইচ্ছাকৃতভাবে ছোঁয়া হয়নি:** `ios/Flutter/Generated.xcconfig` ও `flutter_export_environment.sh` — এগুলো Flutter build tool কর্তৃক **auto-generated** (ARB-এর মতোই — ম্যানুয়াল এডিট করলে next build-এ overwrite হয়ে যাবে), পরের `flutter build`/`flutter run`-এ এগুলো নিজে থেকেই pubspec.yaml থেকে সঠিক 1.0.0 দিয়ে রিজেনারেট হবে। `esp32/*/SmartIoT_v15.ino`-এর `[FIX-SERIAL v8.2.7]` কমেন্ট দুটোও ছোঁয়া হয়নি — এগুলো historical bug-fix marker (কখন ফিক্সটা হয়েছিল তার রেকর্ড), current-version claim না।
-- **[NOTE]** ESP32 firmware versioning (`v15.0.1`) ইচ্ছাকৃতভাবে আলাদা রাখা হয়েছে — app ও firmware-এর independent version scheme থাকা স্বাভাবিক প্র্যাকটিস (অনেক IoT প্রোডাক্টেই app version আলাদা, device firmware version আলাদা)।
+  - **ইচ্ছাকৃতভাবে ছোঁয়া হয়নি:** `ios/Flutter/Generated.xcconfig` ও `flutter_export_environment.sh` — এগুলো Flutter build tool কর্তৃক **auto-generated** (ARB-এর মতোই — ম্যানুয়াল এডিট করলে next build-এ overwrite হয়ে যাবে), পরের `flutter build`/`flutter run`-এ এগুলো নিজে থেকেই pubspec.yaml থেকে সঠিক 1.0.0 দিয়ে রিজেনারেট হবে। `esp32/*/SmartIoT_firmware.ino`-এর `[FIX-SERIAL v8.2.7]` কমেন্ট দুটোও ছোঁয়া হয়নি — এগুলো historical bug-fix marker (কখন ফিক্সটা হয়েছিল তার রেকর্ড), current-version claim না।
+- **[NOTE]** ESP32 firmware versioning reset to `v1.0.0` on 2026-06-21 (see v1.0.5 CHANGELOG entry). The old "v15.0.1" label was an internal iteration counter. Both app and firmware now use `1.x.x` Semantic Versioning from this point forward, independent of each other.
 - **[ASSUMPTION]** `versionCode 1` বেছে নেওয়া হয়েছে এই ধরে নিয়ে যে Play Console-এ (internal/closed testing track-সহ) আগে কখনো কোনো build আপলোড হয়নি। যদি ভুল হয়, আগের সর্বোচ্চ versionCode জানিয়ে দিলে সেটার থেকে +1 করে দেওয়া হবে।
 
 ---
@@ -103,7 +114,7 @@ Performed a systematic, scripted pass across the whole project rather than ad-ho
 আগের v8.2.8 পাসে `automation_deleted`/`scene_deleted` key সরাসরি generated ফাইলে (`lib/l10n/app_localizations*.dart`) যোগ করা হয়েছিল, কিন্তু **ARB source file-এ (`app_en.arb`/`app_bn.arb`) যোগ করা হয়নি** — `flutter gen-l10n` রান করলে ওই generated ফাইল ARB থেকে নতুন করে তৈরি হয়, ফলে key দুটো হারিয়ে যায় ("undefined_getter" compile error)। এখন ঠিক জায়গায় (ARB) ফিক্স করা হয়েছে এবং 374 ARB key ↔ abstract class ↔ EN impl ↔ BN impl ↔ lib/-এর সব ১৪৭টা actual usage — সব মিলিয়ে cross-verify করা হয়েছে (০ mismatch)। সাথে একটা প্রকৃত bug-ও ধরা পড়েছিল: `automations_screen.dart`-এ async Firebase delete-এর পর `mounted` চেক ছাড়াই `context` ব্যবহার হচ্ছিল (`use_build_context_synchronously`) — এটাও ফিক্স করা হয়েছে।
 
 ### 🔴 High-Priority Findings (flagged, NOT auto-fixed — needs your decision)
-- **[FIRMWARE]** `esp32/SmartIoT_v15/` ও `esp32/SmartIoT_v15 upgrade/` দুটো ফোল্ডারেই `FIRMWARE_VER "v15.0.1"` — কিন্তু `upgrade` ফোল্ডারে WiFi reason-201 (NO_AP_FOUND) ফিক্স ও 2.4GHz-only protocol-force ফিক্স **নেই**। `esp32/SmartIoT_v15/` (upgrade ছাড়া) ব্যবহার করুন।
+- - **[FIRMWARE ✅ RESOLVED in v1.0.5]** Duplicate folder renamed/removed. Now `esp32/SmartIoT_firmware/`, version reset to `v1.0.0`.
 - **[SECURITY]** Firebase "Database Secrets" Google কর্তৃক deprecated মার্ক করা (এখনও কাজ করে, কিন্তু ভবিষ্যতে সরিয়ে দেওয়া হতে পারে) — দীর্ঘমেয়াদে migration বিবেচনা করুন।
 - **[I18N]** `automations_screen.dart` ও `scenes_screen.dart` ~৯০% হার্ডকোডেড ইংরেজি (প্রায় ৬০টা string) — বাকি app-এর ৩৪৭-key bilingual coverage-এর সাথে সামঞ্জস্যপূর্ণ নয়। বড় কাজ, পরবর্তী dedicated pass-এ করার সুপারিশ।
 - **[DATA]** `/devices/{id}/history` cloud path-এ কোনো server-side trim নেই (local Hive cache 5000→4500 ট্রিম হয়, কিন্তু cloud copy unbounded growth — critical-event-only filtering দিয়ে rate কম রাখা আছে)।

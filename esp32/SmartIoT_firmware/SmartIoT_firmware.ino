@@ -1,14 +1,26 @@
 /**********************************************************************************
- * SmartIoT_v15.ino — SMART WATER LEVEL CONTROL BD
- * Firmware v15.0.1  |  Production Edition
+ * SmartIoT_firmware.ino — SMART WATER LEVEL CONTROL BD
+ * Firmware v1.0.0  |  Production Edition
  * ─────────────────────────────────────────────────────────────────────────────
  * DEVELOPER  : Sobuj Billah  |  IoT Systems Architect
  * COMPANY    : SMART IoT Interface
  * CONTACT    : smartiotinterface@gmail.com
  * WEBSITE    : smartiotinterface.blogspot.com
  * YOUTUBE    : @smartiotinterface
- * BUILD DATE : 30-05-2026
+ * BUILD DATE : 21-06-2026
  * Made with  : 💙 in Bangladesh 🇧🇩
+ *
+ * ════════════════════════════════════════════════════════════════════════════
+ * VERSIONING RESET — 2026-06-21
+ * ════════════════════════════════════════════════════════════════════════════
+ * Firmware numbering reset to v1.0.0 here. The old "v15.0.1" label was an
+ * internal dev-iteration counter that had climbed far past what a version
+ * number should communicate, and didn't line up with the Flutter app's
+ * clean 1.0.x scheme. No logic changed by this reset — every fix below is
+ * still in the code exactly as before. Keeping the fix log because it
+ * documents WHY specific code exists (e.g. why endProvision() is called
+ * before every beginProvision()) — that context matters for future
+ * debugging even though the version label changed.
  *
  * ════════════════════════════════════════════════════════════════════════════
  * v15.0.1 — BLE PROVISIONING SESSION FIX
@@ -174,7 +186,7 @@
 // ============================================================================
 // VERSION
 // ============================================================================
-#define FIRMWARE_VER    "v15.0.1"
+#define FIRMWARE_VER    "v1.0.0"
 #define FIRMWARE_NAME   "SmartIoT Production Edition"
 #define BUILD_DATE      __DATE__
 #define BUILD_TIME      __TIME__
@@ -2365,7 +2377,7 @@ void drawInfoScreen() {
     display.print("SYSTEM INFO");
     display.setTextColor(SSD1306_WHITE);
 
-    // Row 1 (y=12): Firmware version  "FW: SmartIoT v15.0.1" = 21ch = 126px, ok
+    // Row 1 (y=12): Firmware version  "FW: SmartIoT v1.0.0" = 19ch = 114px, ok
     display.setCursor(0, 12);
     display.printf("FW: SmartIoT %s", FIRMWARE_VER);
 
@@ -2903,7 +2915,7 @@ void loop() {
 }
 
 // ============================================================================
-// END OF FIRMWARE — SmartIoT v15.0.1  |  Made with 💙 in Bangladesh 🇧🇩
+// END OF FIRMWARE — SmartIoT v1.0.0  |  Made with 💙 in Bangladesh 🇧🇩
 // ════════════════════════════════════════════════════════════════════════════
 //
 // GPIO SUMMARY:

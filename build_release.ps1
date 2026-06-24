@@ -48,5 +48,5 @@ Write-Host "Firebase Console -> Project Settings -> Android App-এ যোগ �
 Write-Host ""
 Write-Host "চালানোর আগে নিশ্চিত করুন:"
 Write-Host "  [ ] android\key.properties -- real keystore password আছে (CREATE_KEYSTORE.md দেখুন)"
-Write-Host "  [ ] esp32\SmartIoT_v15\secrets.h -- FIREBASE_DB_SECRET real value দেওয়া আছে"
+Write-Host "  [ ] esp32\SmartIoT_firmware\secrets.h -- FIREBASE_DB_SECRET real value দেওয়া আছে"
 Write-Host "  [ ] Firebase Console -> Realtime Database -> Rules deploy করা হয়েছে"

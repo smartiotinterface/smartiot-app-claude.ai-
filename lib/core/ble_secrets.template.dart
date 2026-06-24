@@ -4,7 +4,7 @@
 //
 //  এই ফাইল কপি করে lib/core/ble_secrets.dart বানাও (সেই ফাইলটা .gitignore
 //  করা আছে, কখনো GitHub-এ push হবে না)। নিচের placeholder-টা
-//  esp32/SmartIoT_v15/secrets.h-এর POP_MASTER_KEY_HEX-এর সাথে
+//  esp32/SmartIoT_firmware/secrets.h-এর POP_MASTER_KEY_HEX-এর সাথে
 //  EXACTLY same value হতে হবে — না হলে BLE provisioning কোনো device-এই
 //  কাজ করবে না (app আর firmware আলাদা PoP বের করবে, mismatch হবে)।
 //

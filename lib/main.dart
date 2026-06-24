@@ -1,5 +1,5 @@
 // lib/main.dart
-// v1.0.3 — COUNTRY CODE PICKER UI + DOC FIXES
+// v1.0.5 — FIRMWARE VERSION RESET & FOLDER RENAME
 // ✅ BLE timeouts + null-safety + release keystore + SHA-1 embedded + bilingual EN/BN
 // Bilingual (EN/BN) — 100% EN or 100% BN, no mixed language
 
