@@ -1,3 +1,10 @@
+## [1.0.7] — 2026-06-21
+
+### 🔧 Code Quality
+- **[LINT-1]** `ble_provisioning_service.dart` line 94: `final prefix` → `const prefix`. `kDevicePrefix` is already `const`, so the interpolated value `'\${kDevicePrefix}_'` is a compile-time constant. Resolves `prefer_const_declarations` info from `flutter analyze`. **`flutter analyze` now returns 0 issues.**
+
+---
+
 ## [1.0.6] — 2026-06-21
 
 ### 🔒 Security (Firmware)

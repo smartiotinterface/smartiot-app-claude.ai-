@@ -91,7 +91,7 @@ class BleProvisioningService extends ChangeNotifier {
   // "PROV_SmartIoT_SWT-9C64A71AD6B8" — the serial is everything after the
   // "PROV_SmartIoT_" prefix, matching what the firmware uses as g_chipSerial.
   static String derivePoP(String deviceName) {
-    final prefix = '${kDevicePrefix}_';
+    const prefix = '${kDevicePrefix}_';
     final serial = deviceName.startsWith(prefix)
         ? deviceName.substring(prefix.length)
         : deviceName; // fallback: use as-is if prefix somehow missing
